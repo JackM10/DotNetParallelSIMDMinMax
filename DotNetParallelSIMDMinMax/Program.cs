@@ -25,6 +25,7 @@ namespace DotNetParallelSIMDMinMax
             {
                 FillArray(ref inputA);
                 FillArray(ref inputB);
+                FillArray(ref inputC);
                 ParallelSIMDMinMax();
             }
 
@@ -33,18 +34,18 @@ namespace DotNetParallelSIMDMinMax
                 var simdLength = Vector<ushort>.Count;
                 var vmin = new Vector<ushort>(ushort.MaxValue);
                 var vmax = new Vector<ushort>(ushort.MinValue);
-                var k = 0;
-                
+                var i = 0;
+
                 // Find the max and min for each of Vector<ushort>.Count sub-arrays 
-                Parallel.ForEach(Enumerable.Range(0, inputC.Length - simdLength).Select(j => j * simdLength), new ParallelOptions { }, i =>
+                Parallel.ForEach(Enumerable.Range(0, inputC.Length - simdLength).Select(j => j * simdLength), new ParallelOptions { }, j =>
                 // Next line is working non-parallel SIMD version:
-                // for (i = 0; i <= inputC.Length - simdLength; i += simdLength)
+                //for (i = 0; i <= inputC.Length - simdLength; i += simdLength)
                 {
-                    var va = new Vector<ushort>(inputC, i);
+                    var va = new Vector<ushort>(inputC, j);
                     vmin = Vector.Min(va, vmin);
                     vmax = Vector.Max(va, vmax);
                 });
-                
+
                 // Find the max and min of all sub-arrays
                 minC = ushort.MaxValue;
                 maxC = ushort.MinValue;
@@ -55,11 +56,13 @@ namespace DotNetParallelSIMDMinMax
                 }
 
                 // Process any remaining elements
-                for (; k < inputC.Length; ++k)
+                for (; i < inputC.Length; ++i)
                 {
-                    minC = Math.Min(minC, inputC[k]);
-                    maxC = Math.Max(maxC, inputC[k]);
+                    minC = Math.Min(minC, inputC[i]);
+                    maxC = Math.Max(maxC, inputC[i]);
                 }
+
+                Console.WriteLine($"minC = {minC}, maxC = {maxC}");
             }
 
 
