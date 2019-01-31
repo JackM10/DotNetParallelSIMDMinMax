@@ -11,7 +11,7 @@ namespace DotNetParallelSIMDMinMax
     {
         public class ConsoleAppNetCore21
         {
-            private static ushort[] inputA = new ushort[] { };
+            private static int[] Array = new int[] { };
             private static ushort[] inputB = new ushort[] { };
             private static ushort[] inputC = new ushort[] { };
             private static ushort minA;
@@ -23,10 +23,52 @@ namespace DotNetParallelSIMDMinMax
 
             public static void Main()
             {
-                FillArray(ref inputA);
-                FillArray(ref inputB);
-                FillArray(ref inputC);
-                ParallelSIMDMinMax();
+                FillArray(ref Array);
+                //FillArray(ref inputB);
+                //FillArray(ref inputC);
+                // ParallelSIMDMinMax();
+                Console.WriteLine(ParallelArrSum());
+                Console.ReadKey();
+            }
+
+            public static int ArrSum()
+            {
+                int vectorSize = Vector<int>.Count;
+                var accVector = Vector<int>.Zero;
+                int i;
+                var array = Array;
+                for (i = 0; i < array.Length - vectorSize; i += vectorSize)
+                {
+                    var v = new Vector<int>(array, i);
+                    accVector = Vector.Add(accVector, v);
+                }
+                int result = Vector.Dot(accVector, Vector<int>.One);
+                for (; i < array.Length; i++)
+                {
+                    result += array[i];
+                }
+                return result;
+            }
+
+            public static int ParallelArrSum()
+            {
+                int simdLength = Vector<int>.Count;
+                var accVector = Vector<int>.Zero;
+                int i;
+                var array = Array;
+                //for (i = 0; i < array.Length - vectorSize; i += vectorSize)
+                Parallel.ForEach(Enumerable.Range(0, array.Length - simdLength).Select(j => j * simdLength), new ParallelOptions { }, j =>
+                {
+                    var v = new Vector<int>(array, j);
+                    accVector = Vector.Add(accVector, v);
+                    // i = j;
+                });
+                int result = Vector.Dot(accVector, Vector<int>.One);
+                //for (; i < array.Length; i++)
+                //{
+                //    result += array[i];
+                //}
+                return result;
             }
 
             public static void ParallelSIMDMinMax()
@@ -66,14 +108,14 @@ namespace DotNetParallelSIMDMinMax
             }
 
 
-            private static void FillArray(ref ushort[] arr)
+            private static void FillArray(ref int[] arr)
             {
                 ushort Min = 0;
                 ushort Max = 65535;
                 Random randNum = new Random();
                 arr = Enumerable
                     .Repeat(0, 65568)
-                    .Select(i => (ushort)randNum.Next(Min, Max))
+                    .Select(i => randNum.Next(Min, Max))
                     .ToArray();
             }
         }
