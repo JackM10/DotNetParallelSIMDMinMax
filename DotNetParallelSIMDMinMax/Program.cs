@@ -27,7 +27,8 @@ namespace DotNetParallelSIMDMinMax
                 //FillArray(ref inputB);
                 //FillArray(ref inputC);
                 // ParallelSIMDMinMax();
-                Console.WriteLine(ParallelArrSum());
+                //Console.WriteLine(ParallelArrSum());
+                TaskParallelArrSum();
                 Console.ReadKey();
             }
 
@@ -47,6 +48,41 @@ namespace DotNetParallelSIMDMinMax
                 {
                     result += array[i];
                 }
+                return result;
+            }
+
+            public static int TaskParallelArrSum()
+            {
+                var task1 = new Task(() => TaskParallelArrSumHelper(0, 16392));
+                task1.Start();
+                var task2 = new Task(() => TaskParallelArrSumHelper(16392, 32784));
+                task2.Start();
+                var task3 = new Task(() => TaskParallelArrSumHelper(32784, 49176));
+                task3.Start();
+                var task4 = new Task(() => TaskParallelArrSumHelper(49176, 65568));
+                task4.Start();
+
+                Task.WaitAll(task1, task2);
+
+                return 0;
+            }
+
+            private static int TaskParallelArrSumHelper(int i, int arrLengthToProcess)
+            {
+                int vectorSize = Vector<int>.Count;
+                var accVector = Vector<int>.Zero;                
+                var array = Array;
+                for (; i < arrLengthToProcess - vectorSize; i += vectorSize)
+                {
+                    var v = new Vector<int>(array, i);
+                    accVector = Vector.Add(accVector, v);
+                }
+                int result = Vector.Dot(accVector, Vector<int>.One);
+                for (; i < arrLengthToProcess; i++)
+                {
+                    result += array[i];
+                }
+
                 return result;
             }
 
